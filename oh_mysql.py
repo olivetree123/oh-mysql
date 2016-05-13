@@ -22,9 +22,8 @@ def get_key(word):
     return word.split(SPLIT_WORD)[0]
 
 
-class myMySQL(object):
+class OhMysql(object):
     def __init__(self,**kwargs):
-        print 'init mysql connection...'
         self.host = kwargs.get('host','')
         self.db = kwargs.get('db','')
         self.user = kwargs.get('user','')
@@ -34,7 +33,6 @@ class myMySQL(object):
         self._connect()
 
     def __del__(self):
-        print 'del connection...'
         if hasattr(self,'cursor'):
             self.cursor.close()
         if hasattr(self,'conn'):
@@ -45,7 +43,6 @@ class myMySQL(object):
             self.conn = MySQLdb.connect(host = self.host,db = self.db,user = self.user,passwd = self.passwd)
             self.cursor = self.conn.cursor(MySQLdb.cursors.DictCursor)
         except Exception,e:
-            print e
             raise Exception('Failed to connect to database,please check settings.')
 
     def _execute_select(self):
@@ -59,9 +56,10 @@ class myMySQL(object):
             sql = sql + ' group by '+self.group_cond
         if self.having_cond:
             sql = sql + ' having '+self.having_cond
-        print 'sql : ',sql
-        print 'condition :',self.condition
         self.cursor.execute(sql,tuple(self.condition))
+
+    def disconnect(self):
+        self.__del__()
 
     def fetchone(self):
         self._execute_select()
@@ -75,7 +73,6 @@ class myMySQL(object):
         self.cursor.execute('show columns from %s' % table)
         res = self.cursor.fetchall()
         columns = [r['Field'] for r in res]
-        print 'columns : ',columns
         return columns
 
     def _test(self):
@@ -142,7 +139,6 @@ class myMySQL(object):
         '''
         if h_conds:
             self.having_cond = ' and '.join(h_conds)
-            print 'having : ',self.having_cond
         return self
 
     def update(self,dic,cond_dic = None):
@@ -154,7 +150,6 @@ class myMySQL(object):
         columns = self._get_columns(self.table)
         keys = [k for k in dic.keys() if k in columns]
         if not keys:
-            print 'no data will be updated'
             return 0
         values = [dic[k] for k in keys]
         cd = [v for v in values]
@@ -174,7 +169,6 @@ class myMySQL(object):
         columns = self._get_columns(self.table)
         keys = [k for k in dic.keys() if k in columns]
         if not keys:
-            print 'no data will be inserted'
             return 0
         values = [dic[k] for k in keys]
         cond = [v for v in values]
@@ -185,15 +179,11 @@ class myMySQL(object):
 
 
 if __name__ == '__main__':
-    mysql = myMySQL(host = 'localhost',db = 'amazon_us',user = 'root',passwd = 'zhy')
-    try:
-        mysql.table('category').group_by('level').column('level','count(*) as count').having('count(*)>100 and level>3')
-    except Exception,e:
-        import traceback
-        traceback.print_exc()
+    mysql = OhMysql(host = 'localhost',db = 'amazon_us',user = 'root',passwd = 'zhy')
+    mysql.table('category').group_by('level').column('level','count(*) as count').having('count(*)>100 and level>3')
     res = mysql.fetchall()
     print 'res : ',res
-    del mysql
+    mysql.disconnect()
     
 
 
