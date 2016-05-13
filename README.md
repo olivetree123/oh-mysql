@@ -28,7 +28,7 @@ Example:
 </pre>
 
 <h3>filter</h3>
-函数定义：filter(**cond_dic)
+函数定义：filter(self,**cond_dic)
 
 参数说明：    
 <ul>
